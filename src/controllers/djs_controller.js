@@ -1,20 +1,40 @@
 const { pick } = require("lodash");
 
-const { Dj, Musicalgenre, DjMusicalgenre } = require("../models");
+const { Dj, Musicalgenre, DjMusicalgenre, Clubs } = require("../models");
 const { NotFoundError } = require("../helpers/errors");
 
 const djsController = {
   getAllDjs: async () => {
-    // Your code here
-    const djs = await Dj.findAll()
-    return {djs};
+
+    const findAllDjs = await Dj.findAll({
+      order: [["name", "ASC"]],
+      attributes: {
+        exclude: ["createdAt", "updatedAt", "club_id"],
+        include: [
+          {
+            model: Clubs,
+            attributes: ["name"]
+          },
+          {
+            model: Musicalgenre,
+            as: "musical_genres",
+            through: {
+              attributes: []
+            }
+          }
+        ],
+      },
+      raw: true
+    });
+
+    return findAllDjs ;
   },
 
   getDj: async (name) => {
     // Your code here
     const dj = await Dj.findOne({where: {name}})
     if(!dj) throw new NotFoundError('dj not exist')
-    return {dj};
+    return dj;
   },
 
   addDj: async (data) => {
