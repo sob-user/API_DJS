@@ -13,6 +13,7 @@ const server = express();
 server.use(helmet());
 server.use(logger("dev"));
 server.use(bodyParser.json());
+server.use(bodyParser.urlencoded({extended:false}))
 
 server.use("/api", cors());
 
