@@ -1,7 +1,7 @@
 const { pick } = require("lodash");
 
 const { Dj, Musicalgenre, DjMusicalgenre, Clubs } = require("../models");
-const { NotFoundError } = require("../helpers/errors");
+const { NotFoundError, BadRequestError } = require("../helpers/errors");
 
 const djsController = {
   getAllDjs: async () => {
@@ -32,15 +32,67 @@ const djsController = {
 
   getDj: async (name) => {
     // Your code here
-    const dj = await Dj.findOne({where: {name}})
-    if(!dj) throw new NotFoundError('dj not exist')
+    const findDj = await Dj.findOne({
+      where: {
+        name
+      },
+      attributes: {
+        exclude: ["createdAt", "clubv_id"]
+      },
+      exclude: [
+        {
+          model: Clubs,
+          attributes: ["name"],
+          as: "clubs"
+        },
+        {
+          model: Musicalgenre,
+          as: "musical_genre",
+          through: {
+            attributes: []
+          }
+        }
+      ]
+    });
+
+    if(!dj) throw new NotFoundError(
+      "not found", "DJ doesn't exist")
+
     return dj;
   },
 
   addDj: async (data) => {
-    // Your code here
+    const djName = data.name
+    const clubId= data.club_id
 
-    const dj = await Dj.build({data})
+    const findDj = await Dj.findOne({
+      where: {
+        name: djName
+      }
+    });
+
+    if(findDj) throw new BadRequestError(
+      "existing resource", "Dj already exist")
+
+    const findClub = await Clubs.findOne({
+      where: {
+        id: clubId
+      }
+    });
+
+    if(!findClub) throw new NotFoundError(
+      "Not found", "This club already exist")
+
+    const createNewDj = await Dj.create(data)
+
+    const musicalGenreRegistred = await Musicalgenre.findAll({
+      attributes: {
+        exclude: ["createdAt", "updatedAt"]
+      }
+    });
+
+    const musicalGenreUnregistered = data.musical_genre
+
     return {dj};
   },
 
